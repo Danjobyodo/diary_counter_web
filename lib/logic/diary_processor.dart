@@ -1,4 +1,4 @@
-import 'dart:foundation';
+import 'package:flutter/foundation.dart';
 
 class DiaryProcessor {
   Future<String> process(String fileContent) async {
@@ -41,6 +41,12 @@ class DiaryProcessor {
           csvBuffer.writeln('$year,$month,$day,$count');
         }
       }
+      return csvBuffer.toString();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error processing file: $e');
+      }
+      rethrow;
     }
   }
 }
