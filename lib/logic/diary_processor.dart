@@ -33,7 +33,7 @@ class DiaryProcessor {
                 rune != 0x3000 &&
                 !String.fromCharCode(rune).trim().isEmpty)
             .length;
-        final dateComponents = dateString.split('\n');
+        final dateComponents = dateString.split('/');
         if (dateComponents.length == 3) {
           final year = dateComponents[0];
           final month = int.tryParse(dateComponents[1]) ?? 0;
