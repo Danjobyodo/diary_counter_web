@@ -1,0 +1,10 @@
+{
+  "installCommand": "flutter pub get",
+  "builds": [
+    {
+      "src": "web/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "outputDirectory": "build/web"
+}
