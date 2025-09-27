@@ -1,13 +1,14 @@
 {
     "name": "diary_counter_web",
     "short_name": "diary_counter_web",
-    "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
     "description": "A new Flutter project.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "scope": "/diary_counter_web/",
+    "start_url": "/diary_counter_web/",
     "icons": [
         {
             "src": "icons/Icon-192.png",
