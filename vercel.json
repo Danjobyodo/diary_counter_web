@@ -1,4 +1,0 @@
-{
-  "buildCommand": "if [ -d \"/flutter\" ]; then export PATH=\"$PATH:/flutter/bin\"; fi && flutter build web --release",
-  "outputDirectory": "build/web"
-}
