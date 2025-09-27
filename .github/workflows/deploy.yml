@@ -33,7 +33,7 @@ jobs:
       # 4. Webアプリをビルドする
       #    --base-href オプションがGitHub Pagesで正しく表示させるための鍵
       - name: Build Flutter Web App
-        run: flutter build web --release --base-href /diary_counter_web/
+        run: flutter build web --release
         #                                  ↑↑↑ あなたのリポジトリ名に合わせてください
 
       # 5. ビルドされた成果物を gh-pages ブランチにデプロイする
