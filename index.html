@@ -33,6 +33,16 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    // 404.htmlが保存したリダイレクト先のパスを取得します。
+    const redirect = sessionStorage.redirect;
+    // 取得したら、もう不要なので削除します。
+    delete sessionStorage.redirect;
+    // もしリダイレクト先のパスがあれば、URLの履歴を書き換えます。
+    if (redirect && redirect !== '/') {
+      history.replaceState(null, null, redirect);
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
