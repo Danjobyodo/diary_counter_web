@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting...</title>
+  <script>
+    // URLのパス部分を取得し、セッションストレージに保存します。
+    // 例: /diary_counter_web/some/path -> /some/path
+    const path = window.location.pathname.replace(/^\/diary_counter_web/, '');
+    sessionStorage.redirect = path;
+
+    // アプリのルート（index.html）にリダイレクトします。
+    window.location.replace('/diary_counter_web/');
+  </script>
+</head>
+<body>
+  <p>If you are not redirected automatically, follow this <a href="/diary_counter_web/">link</a>.</p>
+</body>
+</html>
