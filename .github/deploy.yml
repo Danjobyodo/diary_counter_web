@@ -1,0 +1,44 @@
+# このワークフローの名前
+name: Deploy Flutter Web App to GitHub Pages
+
+# ワークフローが実行されるタイミングを定義
+# mainブランチにpushされたときに実行される
+on:
+  push:
+    branches:
+      - main
+
+# 実行される一連のタスク（ジョブ）を定義
+jobs:
+  build_and_deploy:
+    # 実行環境を指定（最新のUbuntuを使用）
+    runs-on: ubuntu-latest
+
+    # 実行されるステップ
+    steps:
+      # 1. リポジトリのコードをチェックアウト（ダウンロード）する
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Flutter SDKの環境をセットアップする
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable' # 安定版のFlutterを使用
+
+      # 3. 依存パッケージをインストールする
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 4. Webアプリをビルドする
+      #    --base-href オプションがGitHub Pagesで正しく表示させるための鍵
+      - name: Build Flutter Web App
+        run: flutter build web --release --base-href /diary_counter_web/
+        #                                  ↑↑↑ あなたのリポジトリ名に合わせてください
+
+      # 5. ビルドされた成果物を gh-pages ブランチにデプロイする
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
