@@ -19,6 +19,7 @@ class _HomePageState extends State<HomePage> {
   String? _csvOutput;
   String? _errorMessage;
   bool _isProcessing = false;
+  bool _sortByCount = false;
 
   final _diaryProcessor = DiaryProcessor();
 
@@ -49,8 +50,26 @@ class _HomePageState extends State<HomePage> {
                   icon: const Icon(Icons.upload_file),
                   label: const Text('ファイルを選択'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
                     textStyle: const TextStyle(fontSize: 18),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40.0,
+                    vertical: 8.0,
+                  ),
+                  child: SwitchListTile(
+                    title: const Text('文字数が多い順に並べ替える'),
+                    value: _sortByCount,
+                    onChanged: (bool value) {
+                      setState(() {
+                        _sortByCount = value;
+                      });
+                    },
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -71,7 +90,10 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     child: Column(
                       children: [
-                        const Text('処理結果プレビュー', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          '処理結果プレビュー',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 8),
                         Expanded(
                           child: Container(
@@ -96,7 +118,10 @@ class _HomePageState extends State<HomePage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 16,
+                            ),
                             textStyle: const TextStyle(fontSize: 18),
                           ),
                         ),
@@ -132,7 +157,7 @@ class _HomePageState extends State<HomePage> {
 
         final content = utf8.decode(bytes);
 
-        final csv = await _diaryProcessor.process(content);
+        final csv = _diaryProcessor.process(content, sortByCount: _sortByCount);
 
         setState(() {
           _fileName = file.name;
@@ -159,8 +184,8 @@ class _HomePageState extends State<HomePage> {
     final base64 = base64Encode(bytes);
 
     final anchor = html.AnchorElement(
-        href: 'data:text/plain;charset=utf-8;base64,$base64')
-      ..setAttribute('download', 'numbers_of_letters.csv');
+      href: 'data:text/plain;charset=utf-8;base64,$base64',
+    )..setAttribute('download', 'numbers_of_letters.csv');
 
     html.document.body?.append(anchor);
     anchor.click();
