@@ -20,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   String? _errorMessage;
   bool _isProcessing = false;
   bool _sortByCount = false;
+  String? _fileContent;
 
   final _diaryProcessor = DiaryProcessor();
 
@@ -68,6 +69,12 @@ class _HomePageState extends State<HomePage> {
                     onChanged: (bool value) {
                       setState(() {
                         _sortByCount = value;
+                        if (_fileContent != null) {
+                          _csvOutput = _diaryProcessor.process(
+                            _fileContent!,
+                            sortByCount: _sortByCount,
+                          );
+                        }
                       });
                     },
                   ),
@@ -156,6 +163,7 @@ class _HomePageState extends State<HomePage> {
         final bytes = file.bytes!;
 
         final content = utf8.decode(bytes);
+        _fileContent = content;
 
         final csv = _diaryProcessor.process(content, sortByCount: _sortByCount);
 
