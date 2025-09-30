@@ -1,4 +1,4 @@
-import 'package.flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 
 // データを一時的に保持するための小さなクラスを定義すると便利です
 class _DiaryEntry {
