@@ -21,6 +21,7 @@ class _HomePageState extends State<HomePage> {
   bool _isProcessing = false;
   bool _sortByCount = false;
   String? _fileContent;
+  bool _aggregateByMonth = false;
 
   final _diaryProcessor = DiaryProcessor();
 
@@ -58,29 +59,50 @@ class _HomePageState extends State<HomePage> {
                     textStyle: const TextStyle(fontSize: 18),
                   ),
                 ),
+                // --- ▼▼▼ UIの変更箇所 ▼▼▼ ---
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40.0,
-                    vertical: 8.0,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 8.0),
                   child: SwitchListTile(
-                    title: const Text('文字数が多い順に並べ替える'),
+                    title: Text(
+                      '文字数が多い順に並べ替える',
+                      // 月別表示がONのときはグレーアウトさせる
+                      style: TextStyle(color: _aggregateByMonth ? Colors.grey : null),
+                    ),
                     value: _sortByCount,
+                    // 月別表示がONのときはスイッチを無効化する
+                    onChanged: _aggregateByMonth
+                        ? null
+                        : (bool value) {
+                            setState(() {
+                              _sortByCount = value;
+                              if (_fileContent != null) {
+                                _processContent();
+                              }
+                            });
+                          },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40.0),
+                  child: SwitchListTile(
+                    title: const Text('月別にまとめる'),
+                    value: _aggregateByMonth,
                     onChanged: (bool value) {
                       setState(() {
-                        _sortByCount = value;
+                        _aggregateByMonth = value;
+                        // 月別表示に切り替えたら、日別ソートはOFFにする
+                        if (_aggregateByMonth) {
+                          _sortByCount = false;
+                        }
                         if (_fileContent != null) {
-                          _csvOutput = _diaryProcessor.process(
-                            _fileContent!,
-                            sortByCount: _sortByCount,
-                          );
+                          _processContent();
                         }
                       });
                     },
                   ),
                 ),
+                // --- ▲▲▲ UIの変更箇所 ▲▲▲ ---
                 const SizedBox(height: 16),
-
                 if (_isProcessing)
                   const CircularProgressIndicator()
                 else if (_fileName != null)
@@ -90,9 +112,7 @@ class _HomePageState extends State<HomePage> {
                     _errorMessage!,
                     style: const TextStyle(color: Colors.red),
                   ),
-
                 const SizedBox(height: 24),
-
                 if (_csvOutput != null)
                   Expanded(
                     child: Column(
@@ -143,12 +163,25 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  void _processContent() {
+    if (_fileContent == null) return;
+    final csv = _diaryProcessor.process(
+      _fileContent!,
+      sortByCount: _sortByCount,
+      aggregateByMonth: _aggregateByMonth,
+    );
+    setState(() {
+      _csvOutput = csv;
+    });
+  }
+
   Future<void> _pickFile() async {
     setState(() {
       _isProcessing = true;
       _errorMessage = null;
       _csvOutput = null;
       _fileName = null;
+      _fileContent = null;
     });
 
     try {
@@ -162,24 +195,14 @@ class _HomePageState extends State<HomePage> {
         final file = result.files.single;
         final bytes = file.bytes!;
 
-        final content = utf8.decode(bytes);
-        _fileContent = content;
-
-        final csv = _diaryProcessor.process(content, sortByCount: _sortByCount);
-
-        setState(() {
-          _fileName = file.name;
-          _csvOutput = csv;
-          _isProcessing = false;
-        });
-      } else {
-        setState(() {
-          _isProcessing = false;
-        });
+        _fileContent = utf8.decode(bytes);
+        _fileName = file.name;
+        _processContent();
       }
     } catch (e) {
+      _errorMessage = 'エラーが発生しました: ${e.toString()}';
+    } finally {
       setState(() {
-        _errorMessage = 'エラーが発生しました: ${e.toString()}';
         _isProcessing = false;
       });
     }
