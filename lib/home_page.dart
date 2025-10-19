@@ -1,8 +1,13 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io'; //ネイティブのファイル操作に必要
+import 'package:flutter/foundation.dart'; //kIsWebの判定に必要
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart'; //一時フォルダの取得に必要
+import 'package:share_plus/share_plus.dart'; //共有機能に必要
+
+// Web専用のHTMLライブラリは条件付きでインポート
 import 'package:universal_html/html.dart' as html;
 
 import 'logic/diary_processor.dart';
@@ -29,7 +34,8 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('日記 文字数カウンター (Web版)'),
+        // アプリのタイトルを汎用的に変更
+        title: const Text('日記 文字数カウンター'),
         backgroundColor: Colors.blueGrey[800],
         foregroundColor: Colors.white,
       ),
@@ -59,17 +65,19 @@ class _HomePageState extends State<HomePage> {
                     textStyle: const TextStyle(fontSize: 18),
                   ),
                 ),
-                // --- ▼▼▼ UIの変更箇所 ▼▼▼ ---
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 8.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40.0,
+                    vertical: 8.0,
+                  ),
                   child: SwitchListTile(
                     title: Text(
                       '文字数が多い順に並べ替える',
-                      // 月別表示がONのときはグレーアウトさせる
-                      style: TextStyle(color: _aggregateByMonth ? Colors.grey : null),
+                      style: TextStyle(
+                        color: _aggregateByMonth ? Colors.grey : null,
+                      ),
                     ),
                     value: _sortByCount,
-                    // 月別表示がONのときはスイッチを無効化する
                     onChanged: _aggregateByMonth
                         ? null
                         : (bool value) {
@@ -90,7 +98,6 @@ class _HomePageState extends State<HomePage> {
                     onChanged: (bool value) {
                       setState(() {
                         _aggregateByMonth = value;
-                        // 月別表示に切り替えたら、日別ソートはOFFにする
                         if (_aggregateByMonth) {
                           _sortByCount = false;
                         }
@@ -101,7 +108,6 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                 ),
-                // --- ▲▲▲ UIの変更箇所 ▲▲▲ ---
                 const SizedBox(height: 16),
                 if (_isProcessing)
                   const CircularProgressIndicator()
@@ -138,10 +144,12 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        // --- ▼▼▼ UIの変更箇所 ▼▼▼ ---
+                        // ボタンの役割を「保存」から「共有/保存」へ変更
                         ElevatedButton.icon(
-                          onPressed: _downloadCsv,
-                          icon: const Icon(Icons.download),
-                          label: const Text('CSVファイルとして保存'),
+                          onPressed: _shareOrDownloadCsv,
+                          icon: const Icon(Icons.share),
+                          label: const Text('結果を共有 / 保存'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
                             foregroundColor: Colors.white,
@@ -152,6 +160,7 @@ class _HomePageState extends State<HomePage> {
                             textStyle: const TextStyle(fontSize: 18),
                           ),
                         ),
+                        // --- ▲▲▲ UIの変更箇所 ▲▲▲ ---
                       ],
                     ),
                   ),
@@ -195,6 +204,8 @@ class _HomePageState extends State<HomePage> {
         final file = result.files.single;
         final bytes = file.bytes!;
 
+        // ファイルの内容をUTF-8としてデコード
+        // 様々な文字コードに対応する場合は、より高度な判定が必要です
         _fileContent = utf8.decode(bytes);
         _fileName = file.name;
         _processContent();
@@ -208,18 +219,58 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _downloadCsv() {
+  // --- ▼▼▼ 変更/追加したメソッド ▼▼▼ ---
+
+  /// プラットフォームを判定してCSVの共有またはダウンロードを実行する
+  Future<void> _shareOrDownloadCsv() async {
     if (_csvOutput == null) return;
 
+    if (kIsWeb) {
+      // Webの場合：従来通りダウンロード処理を呼び出す
+      _downloadCsvForWeb();
+    } else {
+      // ネイティブ（iOS, macOSなど）の場合：共有機能を呼び出す
+      await _shareCsvForNative();
+    }
+  }
+
+  /// Webプラットフォーム用のCSVダウンロード処理
+  void _downloadCsvForWeb() {
+    if (_csvOutput == null) return;
     final bytes = utf8.encode(_csvOutput!);
     final base64 = base64Encode(bytes);
-
     final anchor = html.AnchorElement(
       href: 'data:text/plain;charset=utf-8;base64,$base64',
     )..setAttribute('download', 'numbers_of_letters.csv');
-
     html.document.body?.append(anchor);
     anchor.click();
     anchor.remove();
   }
+
+  /// ネイティブプラットフォーム用のCSV共有処理
+  Future<void> _shareCsvForNative() async {
+    if (_csvOutput == null) return;
+    try {
+      // アプリの一時保存ディレクトリを取得
+      final tempDir = await getTemporaryDirectory();
+      final filePath = '${tempDir.path}/numbers_of_letters.csv';
+      final file = File(filePath);
+
+      // CSVデータをファイルに書き込む
+      await file.writeAsString(_csvOutput!, flush: true, encoding: utf8);
+
+      // 共有シートを表示
+      final xFile = XFile(filePath, mimeType: 'text/csv');
+      await Share.shareXFiles([xFile], subject: '日記文字数カウント結果');
+    } catch (e) {
+      // エラーハンドリング
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('共有に失敗しました: ${e.toString()}')));
+      }
+    }
+  }
+
+  // --- ▲▲▲ 変更/追加したメソッド ▲▲▲ ---
 }
