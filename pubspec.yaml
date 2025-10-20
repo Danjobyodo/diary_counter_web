@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 3.0.0+1
 
 environment:
   sdk: ^3.9.2
@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  file_picker: ^6.2.1
+  file_picker: ^8.0.7
   universal_html: ^2.2.4
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -41,13 +41,28 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# flutter_launcher_icons の設定はここから
+flutter_launcher_icons:
+  # iOSとmacOSのアイコンを生成するため、以下のように詳細に記述します
+  ios:
+    generate: true
+  macos:
+    generate: true
+
+  # AndroidとWindowsは対象外
+  android:
+    generate: false
+  windows:
+    generate: false
+
+  # マスターとして使用するアイコン画像のパスを指定
+  image_path: "assets/icon/Icon-1024.png" 
+
+  # iOS/macOSアイコンの透過部分を自動的に白などで塗りつぶす設定
+  remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
