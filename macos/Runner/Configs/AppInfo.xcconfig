@@ -8,7 +8,7 @@
 PRODUCT_NAME = diary_counter_web
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.diaryCounterWeb
+PRODUCT_BUNDLE_IDENTIFIER = com.ikkyu0904haga.diaryCounterWeb
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 com.ikkyu0904haga. All rights reserved.
