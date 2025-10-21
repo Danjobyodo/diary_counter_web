@@ -143,8 +143,6 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // --- ▼▼▼ UIの変更箇所 ▼▼▼ ---
-                        // Builderでボタンをラップし、固有のBuildContextを取得
                         Builder(
                           builder: (BuildContext context) {
                             return ElevatedButton.icon(
@@ -163,7 +161,6 @@ class _HomePageState extends State<HomePage> {
                             );
                           },
                         ),
-                        // --- ▲▲▲ UIの変更箇所 ▲▲▲ ---
                       ],
                     ),
                   ),

@@ -12,7 +12,7 @@ class DiaryProcessor {
   String process(
     String fileContent, {
     bool sortByCount = false,
-    bool aggregateByMonth = false, // <-- 引数を追加
+    bool aggregateByMonth = false,
   }) {
     try {
       final pattern = r'\n\s*\n(?=\d{4}/\d{2}/\d{2})';
@@ -47,9 +47,7 @@ class DiaryProcessor {
         }
       }
 
-      // --- ▼▼▼ ここからロジックの分岐 ▼▼▼ ---
       if (aggregateByMonth) {
-        // 【月別集計の処理】
         final monthlyTotals = <String, int>{};
         for (final entry in entries) {
           final key = '${entry.year}-${entry.month.toString().padLeft(2, '0')}';
@@ -60,26 +58,23 @@ class DiaryProcessor {
 
         final csvBuffer = StringBuffer();
         for (final key in sortedKeys) {
-          final parts = key.split('-');
-          final year = parts[0];
-          final month = int.parse(parts[1]);
           final totalCount = monthlyTotals[key];
-          csvBuffer.writeln('$year,$month,$totalCount');
+          csvBuffer.writeln('$key,$totalCount');
         }
         return csvBuffer.toString();
       } else {
-        // 【今まで通りの日別処理】
         if (sortByCount) {
           entries.sort((a, b) => b.count.compareTo(a.count));
         }
 
         final csvBuffer = StringBuffer();
         for (final entry in entries) {
-          csvBuffer.writeln('${entry.year},${entry.month},${entry.day},${entry.count}');
+          csvBuffer.writeln(
+            '${entry.year},${entry.month},${entry.day},${entry.count}',
+          );
         }
         return csvBuffer.toString();
       }
-      // --- ▲▲▲ ロジックの分岐はここまで ▲▲▲ ---
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print('Error processing file: $e\n$stackTrace');
