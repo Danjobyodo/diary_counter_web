@@ -1,13 +1,13 @@
 import 'dart:convert';
-import 'dart:io'; //ネイティブのファイル操作に必要
-import 'package:flutter/foundation.dart'; //kIsWebの判定に必要
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart'; //一時フォルダの取得に必要
-import 'package:share_plus/share_plus.dart'; //共有機能に必要
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
-// Web専用のHTMLライブラリは条件付きでインポート
 import 'package:universal_html/html.dart' as html;
 
 import 'logic/diary_processor.dart';
@@ -34,7 +34,6 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // アプリのタイトルを汎用的に変更
         title: const Text('日記 文字数カウンター'),
         backgroundColor: Colors.blueGrey[800],
         foregroundColor: Colors.white,
@@ -145,20 +144,24 @@ class _HomePageState extends State<HomePage> {
                         ),
                         const SizedBox(height: 16),
                         // --- ▼▼▼ UIの変更箇所 ▼▼▼ ---
-                        // ボタンの役割を「保存」から「共有/保存」へ変更
-                        ElevatedButton.icon(
-                          onPressed: _shareOrDownloadCsv,
-                          icon: const Icon(Icons.share),
-                          label: const Text('結果を共有 / 保存'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 32,
-                              vertical: 16,
-                            ),
-                            textStyle: const TextStyle(fontSize: 18),
-                          ),
+                        // Builderでボタンをラップし、固有のBuildContextを取得
+                        Builder(
+                          builder: (BuildContext context) {
+                            return ElevatedButton.icon(
+                              onPressed: () => _shareOrDownloadCsv(context),
+                              icon: const Icon(Icons.share),
+                              label: const Text('結果を共有 / 保存'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 16,
+                                ),
+                                textStyle: const TextStyle(fontSize: 18),
+                              ),
+                            );
+                          },
                         ),
                         // --- ▲▲▲ UIの変更箇所 ▲▲▲ ---
                       ],
@@ -203,9 +206,6 @@ class _HomePageState extends State<HomePage> {
       if (result != null && result.files.single.bytes != null) {
         final file = result.files.single;
         final bytes = file.bytes!;
-
-        // ファイルの内容をUTF-8としてデコード
-        // 様々な文字コードに対応する場合は、より高度な判定が必要です
         _fileContent = utf8.decode(bytes);
         _fileName = file.name;
         _processContent();
@@ -222,15 +222,14 @@ class _HomePageState extends State<HomePage> {
   // --- ▼▼▼ 変更/追加したメソッド ▼▼▼ ---
 
   /// プラットフォームを判定してCSVの共有またはダウンロードを実行する
-  Future<void> _shareOrDownloadCsv() async {
+  /// iPad/macOSでの動作安定のため、ボタンのBuildContextを受け取るように変更
+  Future<void> _shareOrDownloadCsv(BuildContext context) async {
     if (_csvOutput == null) return;
 
     if (kIsWeb) {
-      // Webの場合：従来通りダウンロード処理を呼び出す
       _downloadCsvForWeb();
     } else {
-      // ネイティブ（iOS, macOSなど）の場合：共有機能を呼び出す
-      await _shareCsvForNative();
+      await _shareCsvForNative(context);
     }
   }
 
@@ -248,22 +247,31 @@ class _HomePageState extends State<HomePage> {
   }
 
   /// ネイティブプラットフォーム用のCSV共有処理
-  Future<void> _shareCsvForNative() async {
+  /// iPad/macOSで共有メニューの表示位置を特定するためにBuildContextを受け取る
+  Future<void> _shareCsvForNative(BuildContext context) async {
     if (_csvOutput == null) return;
     try {
-      // アプリの一時保存ディレクトリを取得
       final tempDir = await getTemporaryDirectory();
       final filePath = '${tempDir.path}/numbers_of_letters.csv';
       final file = File(filePath);
 
-      // CSVデータをファイルに書き込む
       await file.writeAsString(_csvOutput!, flush: true, encoding: utf8);
 
-      // 共有シートを表示
       final xFile = XFile(filePath, mimeType: 'text/csv');
-      await Share.shareXFiles([xFile], subject: '日記文字数カウント結果');
+
+      // contextからUI要素の位置とサイズを取得
+      final box = context.findRenderObject() as RenderBox?;
+
+      // 共有シートを表示する際に、起点となる位置情報を渡す
+      // これによりiPadでのエラーが解消され、macOSでも安定動作する
+      await Share.shareXFiles(
+        [xFile],
+        subject: '日記文字数カウント結果',
+        sharePositionOrigin: box != null
+            ? box.localToGlobal(Offset.zero) & box.size
+            : null,
+      );
     } catch (e) {
-      // エラーハンドリング
       if (mounted) {
         ScaffoldMessenger.of(
           context,
